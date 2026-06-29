@@ -218,7 +218,7 @@ export const App: Component = () => {
 
   const handleHardDrop = () => {
     const state = currentGameState();
-    if (state.isGameOver || patternCompleted()) return;
+    if (state.isGameOver || patternCompleted() || !state.currentMino) return;
 
     // Pattern Validation logic if in training mode
     if (currentPage() === 'patterns') {

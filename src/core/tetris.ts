@@ -95,6 +95,7 @@ export function isValidPosition(
   rotation: number,
   position: Point
 ): boolean {
+  if (!type || !MINO_LAYOUTS[type]) return false;
   const layout = MINO_LAYOUTS[type][rotation];
   for (const block of layout) {
     const x = position.x + block.x;
@@ -110,7 +111,8 @@ export function isValidPosition(
   return true;
 }
 
-export function getGhostPosition(board: Board, mino: MinoState): Point {
+export function getGhostPosition(board: Board, mino: MinoState | null): Point {
+  if (!mino) return { x: 0, y: 0 };
   let y = mino.position.y;
   while (isValidPosition(board, mino.type, mino.rotation, { x: mino.position.x, y: y + 1 })) {
     y++;
@@ -118,7 +120,8 @@ export function getGhostPosition(board: Board, mino: MinoState): Point {
   return { x: mino.position.x, y };
 }
 
-export function moveMino(board: Board, mino: MinoState, dir: Point): MinoState | null {
+export function moveMino(board: Board, mino: MinoState | null, dir: Point): MinoState | null {
+  if (!mino) return null;
   const nextPos = { x: mino.position.x + dir.x, y: mino.position.y + dir.y };
   if (isValidPosition(board, mino.type, mino.rotation, nextPos)) {
     return { ...mino, position: nextPos };
@@ -126,7 +129,8 @@ export function moveMino(board: Board, mino: MinoState, dir: Point): MinoState |
   return null;
 }
 
-export function rotateMino(board: Board, mino: MinoState, rotationDir: 'clockwise' | 'counter-clockwise'): { mino: MinoState; kicked: boolean } | null {
+export function rotateMino(board: Board, mino: MinoState | null, rotationDir: 'clockwise' | 'counter-clockwise'): { mino: MinoState; kicked: boolean } | null {
+  if (!mino) return null;
   if (mino.type === 'O') {
     return { mino, kicked: false };
   }
@@ -236,7 +240,8 @@ export function checkTSpin(
   return { isTSpin: true, isMini };
 }
 
-export function lockMino(board: Board, mino: MinoState): Board {
+export function lockMino(board: Board, mino: MinoState | null): Board {
+  if (!mino) return board;
   const nextBoard = board.map(row => [...row]);
   const layout = MINO_LAYOUTS[mino.type][mino.rotation];
   for (const block of layout) {
@@ -272,8 +277,11 @@ export function hardDrop(
   isLastMoveRotation: boolean,
   kicked: boolean
 ): HardDropResult {
+  if (!gameState.currentMino) {
+    throw new Error('No active mino to hard drop');
+  }
   const ghostPos = getGhostPosition(gameState.board, gameState.currentMino);
-  const droppedMino = { ...gameState.currentMino, position: ghostPos };
+  const droppedMino: MinoState = { ...gameState.currentMino, position: ghostPos };
 
   // Check T-Spin before locking
   const tspinResult = checkTSpin(gameState.board, droppedMino, isLastMoveRotation, kicked);
@@ -286,15 +294,14 @@ export function hardDrop(
 
   // Pull next mino
   const { mino: nextMinoType, state: nextBagState } = pullNextMino(bagState);
-  const nextMinoPos = INITIAL_POSITIONS[nextMinoType];
-  const nextMino: MinoState = {
+  const nextMino: MinoState | null = nextMinoType ? {
     type: nextMinoType,
     rotation: 0,
-    position: nextMinoPos,
-  };
+    position: INITIAL_POSITIONS[nextMinoType],
+  } : null;
 
   // Check game over (if next mino immediately overlaps)
-  const isGameOver = !isValidPosition(newBoard, nextMino.type, nextMino.rotation, nextMino.position);
+  const isGameOver = nextMino ? !isValidPosition(newBoard, nextMino.type, nextMino.rotation, nextMino.position) : false;
 
   // Score calculation (simple guidelines)
   let baseScore = 0;
@@ -342,7 +349,7 @@ export function holdMino(
   gameState: GameState,
   bagState: BagState
 ): { nextState: GameState; bagState: BagState; success: boolean } {
-  if (gameState.holdUsed) {
+  if (gameState.holdUsed || !gameState.currentMino) {
     return { nextState: gameState, bagState, success: false };
   }
 

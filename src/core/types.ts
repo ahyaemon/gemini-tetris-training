@@ -17,7 +17,7 @@ export interface MinoState {
 
 export interface GameState {
   board: Board;
-  currentMino: MinoState;
+  currentMino: MinoState | null;
   holdMino: MinoType | null;
   holdUsed: boolean;
   nextQueue: MinoType[];

@@ -5,7 +5,7 @@ import { MINO_LAYOUTS, BOARD_WIDTH, BOARD_HEIGHT } from '../core/tetris';
 
 interface TetrisBoardProps {
   board: Board;
-  currentMino: MinoState;
+  currentMino: MinoState | null;
   ghostPosition: Point;
   showGhost: boolean;
   guide: { minoType: MinoType; position: Point; rotation: number } | null;
@@ -17,8 +17,9 @@ interface TetrisBoardProps {
 function isMinoBlock(
   x: number,
   y: number,
-  mino: { type: MinoType; rotation: number; position: Point }
+  mino: { type: MinoType; rotation: number; position: Point } | null
 ): boolean {
+  if (!mino) return false;
   const layout = MINO_LAYOUTS[mino.type][mino.rotation];
   return layout.some(
     block => mino.position.x + block.x === x && mino.position.y + block.y === y
@@ -42,12 +43,12 @@ export const TetrisBoard: Component<TetrisBoardProps> = (props) => {
     if (fixedCell) return `cell-${fixedCell}`;
 
     // 2. Active mino block
-    if (isMinoBlock(x, y, props.currentMino)) {
+    if (props.currentMino && isMinoBlock(x, y, props.currentMino)) {
       return `cell-${props.currentMino.type}`;
     }
 
     // 3. Ghost mino block
-    if (props.showGhost) {
+    if (props.showGhost && props.currentMino) {
       const ghostMino = { ...props.currentMino, position: props.ghostPosition };
       if (isMinoBlock(x, y, ghostMino)) {
         return 'cell-ghost';
