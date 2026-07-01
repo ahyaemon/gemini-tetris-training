@@ -12,7 +12,6 @@ import {
 } from './core/tetris';
 import { createHistoryStack, pushHistory, undo } from './core/history';
 import type { HistoryStack } from './core/history';
-import { PATTERN_DEFINITIONS } from './patterns/definitions';
 import type { PatternDefinition } from './patterns/types';
 import { TetrisBoard } from './components/TetrisBoard';
 import { HoldQueue } from './components/HoldQueue';
@@ -377,8 +376,7 @@ export const App: Component = () => {
       setActivePattern(null);
       startFreePractice();
     } else if (page === 'patterns' && !activePattern()) {
-      // auto select first pattern if none selected
-      startPatternPractice(PATTERN_DEFINITIONS[0]);
+      setActivePattern(null);
     }
   });
 
@@ -410,11 +408,33 @@ export const App: Component = () => {
         <Show
           when={currentPage() === 'free'}
           fallback={
-            <div style={{ width: '100%' }}>
-              <PatternSelector
-                activePatternId={activePattern()?.id || null}
-                onSelect={(pattern) => startPatternPractice(pattern)}
-              />
+            <div style={{ width: '100%', "margin-bottom": '1rem' }}>
+              <Show
+                when={activePattern() === null}
+                fallback={
+                  <div class="card active-pattern-header" style={{ "display": 'flex', "justify-content": 'space-between', "align-items": 'center', "gap": '1.5rem', "flex-wrap": 'wrap' }}>
+                    <div style={{ "flex": '1', "min-width": '250px' }}>
+                      <h2 style={{ margin: '0', "font-size": '1.4rem', "font-weight": '800', color: 'var(--text-color)' }}>
+                        {activePattern()?.name}
+                      </h2>
+                      <p style={{ margin: '8px 0 0 0', "font-size": '0.85rem', color: 'var(--text-muted)' }}>
+                        {activePattern()?.description}
+                      </p>
+                    </div>
+                    <button
+                      class="btn btn-secondary"
+                      onClick={() => setActivePattern(null)}
+                    >
+                      別の定石を選ぶ
+                    </button>
+                  </div>
+                }
+              >
+                <PatternSelector
+                  activePatternId={null}
+                  onSelect={(pattern) => startPatternPractice(pattern)}
+                />
+              </Show>
             </div>
           }
         >
